@@ -1,5 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from accounts.models import User
 
@@ -47,3 +48,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'name')
         read_only_fields = ('email',)
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if not self.user.is_verified:
+            raise serializers.ValidationError('Email is not verified.')
+        return data

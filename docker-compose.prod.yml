@@ -4,6 +4,8 @@ x-django: &django
   build:
     context: .
     dockerfile: ./docker/django/Dockerfile
+    args:
+      ENVIRONMENT: production  # Pass the build argument
   restart: always
   image: "${COMPOSE_IMAGES_PREFIX}_prod"
   depends_on:

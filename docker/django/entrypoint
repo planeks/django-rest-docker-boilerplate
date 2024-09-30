@@ -103,9 +103,6 @@ case "$1" in
     shell)
         exec python manage.py shell
     ;;
-    pip-compile)
-        exec pip-compile requirements.in
-    ;;
     celery)
         exec celery -A config "${@:2}"
     ;;

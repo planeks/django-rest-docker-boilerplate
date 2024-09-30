@@ -76,6 +76,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             'Unselect this instead of deleting accounts.'
         ),
     )
+    is_verified = models.BooleanField('Email verified', default=False)
 
     date_joined = models.DateTimeField(_('Date joined'), default=timezone.now)
 

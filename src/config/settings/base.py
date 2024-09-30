@@ -39,8 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_spectacular',
+    'corsheaders',
     # 'polymorphic',
-    # 'channels',
     # 'anymail',
     'django_extensions',
 
@@ -48,27 +49,6 @@ INSTALLED_APPS = [
     'core',
     'accounts',
 ]
-
-if CONFIGURATION == 'dev':
-    INSTALLED_APPS += [
-        'debug_toolbar',
-    ]
-    DEBUG_TOOLBAR_PANELS = [
-        'debug_toolbar.panels.history.HistoryPanel',
-        'debug_toolbar.panels.versions.VersionsPanel',
-        'debug_toolbar.panels.timer.TimerPanel',
-        'debug_toolbar.panels.settings.SettingsPanel',
-        'debug_toolbar.panels.headers.HeadersPanel',
-        'debug_toolbar.panels.request.RequestPanel',
-        'debug_toolbar.panels.sql.SQLPanel',
-        'debug_toolbar.panels.staticfiles.StaticFilesPanel',
-        'debug_toolbar.panels.templates.TemplatesPanel',
-        'debug_toolbar.panels.cache.CachePanel',
-        'debug_toolbar.panels.signals.SignalsPanel',
-        'debug_toolbar.panels.logging.LoggingPanel',
-        'debug_toolbar.panels.redirects.RedirectsPanel',
-        'debug_toolbar.panels.profiling.ProfilingPanel',
-    ]
 
 if SENTRY_DSN:
     import sentry_sdk
@@ -98,6 +78,7 @@ if SENTRY_DSN:
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -106,15 +87,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-if CONFIGURATION == 'dev':
-    MIDDLEWARE += [
-        'debug_toolbar.middleware.DebugToolbarMiddleware',
-    ]
-    DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda x: True,
-    }
-
 
 ROOT_URLCONF = 'config.urls'
 
@@ -172,15 +144,6 @@ REDIS_URL = config('REDIS_URL')
 
 WSGI_APPLICATION = 'config.wsgi.application'
 # ASGI_APPLICATION = 'config.asgi.application'
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels_redis.core.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [REDIS_URL],
-#         },
-#     },
-# }
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
@@ -227,6 +190,8 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default='0', cast=bool)
 
+# Host for sending e-mail.
+
 
 CACHES = {
     'default': {
@@ -238,10 +203,28 @@ CACHES = {
 
 # Configure REST framework
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Your Project API',
+    'DESCRIPTION': 'API documentation for Your Project',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+            'description': 'JWT Authorization header using the Bearer scheme.',
+        }
+    },
+}
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Add Simple JWT settings (optional)
 from datetime import timedelta
@@ -249,31 +232,3 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
-
-
-if CONFIGURATION == 'prod':
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-    USE_HTTPS = config('USE_HTTPS', default='0', cast=bool)
-
-    if USE_HTTPS:
-        SECURE_SSL_REDIRECT = True
-        SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-elif CONFIGURATION == 'testing':
-    DEBUG = False
-
-    CELERY_BROKER_URL = 'redis://'
-    CELERY_RESULT_BACKEND = 'redis://'
-
-    PASSWORD_HASHERS = [
-        'django.contrib.auth.hashers.MD5PasswordHasher',
-    ]
-
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        }
-    }
-
-    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
-    DEFAULT_FROM_EMAIL = 'test@test.com'

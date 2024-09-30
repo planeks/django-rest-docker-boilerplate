@@ -4,6 +4,8 @@ x-django: &django
   build:
     context: .
     dockerfile: ./docker/django/Dockerfile
+    args:
+      ENVIRONMENT: development  # Pass the build argument
   image:  "${COMPOSE_IMAGES_PREFIX}_dev"
   depends_on:
     - postgres
@@ -21,7 +23,7 @@ services:
     ports:
       - "8000:8000"
     command: dev
-    # entrypoint: /entrypoint dev
+    entrypoint: /entrypoint dev
   celeryworker:
     <<: *django
     command: celery-dev worker -l INFO

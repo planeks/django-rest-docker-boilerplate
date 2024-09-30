@@ -1,33 +1,49 @@
+# Use the official Python image
 FROM python:3.12-bullseye
 
-ENV PYTHONUNBUFFERED 1
+# Set environment variables at the beginning
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100 \
+    POETRY_VERSION=1.8.2  \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_NO_INTERACTION=1 \
+    PYSETUP_PATH="/code" \
+    VENV_PATH="/code/.venv"
+# prepend poetry and venv to path
+ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+# Install dependencies
+RUN apt-get update \
+    && apt-get install -y build-essential libpq-dev gettext curl graphviz \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && rm -rf /var/lib/apt/lists/*
 
-# Uncomment adding NodeJS repository if you do not need it
-RUN \
-  # curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
-  apt-get update \
-  # dependencies for building Python packages
-  && apt-get install -y build-essential \
-  # psycopg2 dependencies
-  && apt-get install -y libpq-dev \
-  # Translations dependencies
-  && apt-get install -y gettext \
-  # Some extra packages
-  && apt-get install -y curl graphviz \
-  # Other dependencies \
-  # Uncomment the next line if you need NodeJS
-  # && apt-get install -y nodejs \
-  # cleaning up unused files
-  && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
-  && rm -rf /var/lib/apt/lists/*
+# install poetry - respects $POETRY_VERSION & $POETRY_HOME
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN curl -sSL https://install.python-poetry.org | python3 -
 
+# Create appuser
 RUN addgroup --gid 1024 appuser \
     && adduser --disabled-password --gecos "" --force-badname --ingroup appuser appuser
 
-# Requirements are installed here to ensure they will be cached.
-COPY ./src/requirements.txt /requirements.txt
-RUN pip install -U pip pip-tools && pip install --no-cache-dir -r /requirements.txt && rm -rf /requirements.txt
+# Copy only pyproject.toml and poetry.lock first (for better caching)
+COPY --chown=appuser:appuser ./src/pyproject.toml ./src/poetry.lock /opt/project/src/
 
+# Accept build argument to determine environment
+ARG ENVIRONMENT=production
+
+# Install dependencies
+WORKDIR /opt/project/src
+RUN if [ "$ENVIRONMENT" = "production" ] ; then \
+        poetry install --no-root --only main; \
+    else \
+        poetry install --no-root; \
+    fi
+
+# Copy entrypoint
 COPY --chown=appuser:appuser ./docker/django/entrypoint /entrypoint
 RUN sed -i 's/\r$//g' /entrypoint
 RUN chmod +x /entrypoint
@@ -40,6 +56,7 @@ RUN chown -R appuser:appuser /data
 RUN chmod 775 /data
 RUN chmod g+s /data
 
+# Switch to non-root user
 USER appuser
 
 WORKDIR /opt/project/src
