@@ -7,19 +7,9 @@ the README.md file with name of the project.
 
 📌 Delete this section after creating new project.
 
-Download the last version of the boiler plate from the repository: https://github.com/planeks/django-docker-boilerplate
+Download the last version of the boiler plate from the repository: https://github.com/planeks/django-rest-docker-boilerplate
 
-You can download the ZIP archive and unpack it to the directory, or clone the repository (but do not forget to clean the Git history in that case). 
-
-Use the global find and replace for changing the string `NEWPROJECTNAME` in the files in the `src` directory to the proper project name. The easiest way to do it just use `Replace` feature in the IDE.
-
-There are three files where the changes should be done:
-
-```
-src/config/settings.py
-src/config/templates/index.html
-src/config/urls.py
-```
+You can download the ZIP archive and unpack it to the directory, or clone the repository (but do not forget to clean the Git history in that case).
 
 ## 🐳 Install Docker and Docker Compose
 
@@ -74,7 +64,6 @@ Open the `.env` file in your editor and specify the settings:
 
 ```shell
 PYTHONENCODING=utf8
-COMPOSE_IMAGES_PREFIX=newprojectname
 DEBUG=1
 CONFIGURATION=dev
 DJANGO_LOG_LEVEL=INFO
@@ -88,9 +77,8 @@ REDIS_URL=redis://redis:6379/0
 SITE_URL=http://myproject.local:8000
 EMAIL_HOST=mailhog
 EMAIL_PORT=1025
+CADDY_PASSWORD=<here should be hash of a password>
 ```
-
-Please, use the value for `COMPOSE_IMAGES_PREFIX` that correlates with the project name. It will be used as the container images prefix for `docker-compose`.
 
 📌 Generate the secret key for the project and paste it to the `.env` file.
 Also, generate the reasonably good password for the database user.
@@ -380,6 +368,7 @@ EMAIL_HOST_PASSWORD=<email_password>
 SENTRY_DSN=<sentry_dsn>
 CELERY_FLOWER_USER=flower
 CELERY_FLOWER_PASSWORD=<flower_password>
+CADDY_PASSWORD=<here should be hash of a password>
 ```
 
 > ⚠️ Generate strong secret key and passwords. It is very important.

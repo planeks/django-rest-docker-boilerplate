@@ -6,7 +6,7 @@ x-django: &django
     dockerfile: ./docker/django/Dockerfile
     args:
       ENVIRONMENT: development  # Pass the build argument
-  image:  "${COMPOSE_IMAGES_PREFIX}_dev"
+  image:  "${COMPOSE_PROJECT_NAME}_dev"
   depends_on:
     - postgres
     - redis
@@ -47,7 +47,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/postgres/Dockerfile
-    image: "${COMPOSE_IMAGES_PREFIX}_dev_postgres"
+    image: "${COMPOSE_PROJECT_NAME}_dev_postgres"
     volumes:
       - ./data/dev_postgres:/var/lib/postgresql/data:Z
       - ./data/dev_backups:/backups:z
@@ -67,7 +67,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/mkdocs/Dockerfile
-    image: "${COMPOSE_IMAGES_PREFIX}_dev_mkdocs"
+    image: "${COMPOSE_PROJECT_NAME}_dev_mkdocs"
     volumes:
       - ./docs:/docs:cached
       - ./data/dev_mkdocs:/data:z
@@ -81,7 +81,7 @@ services:
 #    build:
 #      context: .
 #      dockerfile: ./docker/caddy/Dockerfile
-#    image: "${COMPOSE_IMAGES_PREFIX}_dev_caddy"
+#    image: "${COMPOSE_PROJECT_NAME}_dev_caddy"
 #    ports:
 #      - "80:80"
 #      - "443:443"

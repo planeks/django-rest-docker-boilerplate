@@ -11,7 +11,11 @@ class InvoiceBasePermission(OxygenBasePermission):
 
 
 class InvoicePermissions(BaseAPIPermissions):
-    base_perms = (IsAuthenticated, AuthenticationBasePermission, InvoiceBasePermission,)
+    base_perms = (
+        IsAuthenticated,
+        AuthenticationBasePermission,
+        InvoiceBasePermission,
+    )
     perms_map = {
         "create": base_perms,
         "list": base_perms,

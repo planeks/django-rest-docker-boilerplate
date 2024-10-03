@@ -16,6 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
             "min_length": "Ensure password field has at least {min_length} characters.",
         },
     )
+
     def validate(self, attrs):
         """Validate password for registration"""
 
@@ -24,16 +25,13 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = User.objects.create_user(
-            name=validated_data['name'],
-            password=validated_data['password'],
-            email=validated_data.get('email', '')
+            name=validated_data["name"], password=validated_data["password"], email=validated_data.get("email", "")
         )
         return user
 
     class Meta:
         model = User
-        fields = ('id', 'name', 'password', 'email')
-
+        fields = ("id", "name", "password", "email")
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -46,13 +44,13 @@ class ChangePasswordSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('email', 'name')
-        read_only_fields = ('email',)
+        fields = ("email", "name")
+        read_only_fields = ("email",)
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         if not self.user.is_verified:
-            raise serializers.ValidationError('Email is not verified.')
+            raise serializers.ValidationError("Email is not verified.")
         return data
