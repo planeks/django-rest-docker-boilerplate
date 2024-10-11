@@ -1,15 +1,52 @@
-FROM python:3.12-bullseye
+###############################################
+# Base Image
+###############################################
+FROM python:3.12-slim AS python_base
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100 \
+    POETRY_VERSION=1.8.2  \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_NO_INTERACTION=1 \
+    PYSETUP_PATH="/code" \
+    VENV_PATH="/code/.venv"
 
-RUN pip install mkdocs mkdocs-material mkdocstrings[crystal,python] mkdocs-awesome-pages-plugin mkdocs-graphviz
+# prepend poetry and venv to path
+ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 
-COPY ./docker/mkdocs/mkdocs.yml /mkdocs.yml
+###############################################
+# Builder Image
+###############################################
+FROM python_base AS builder_base
+RUN  apt-get update && \
+    apt-get --no-install-recommends -y install \
+    build-essential \
+    ca-certificates \
+    curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+# install poetry - respects $POETRY_VERSION & $POETRY_HOME
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN curl -sSL https://install.python-poetry.org | python3 -
 
-RUN mkdir /docs
-COPY ./docs /docs
+# copy project requirement files here to ensure they will be cached.
+WORKDIR $PYSETUP_PATH
+COPY ./src/poetry.lock ./src/pyproject.toml ./
 
-RUN mkdir /data
+# install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
+RUN poetry install --only docs
 
-EXPOSE 8000
-CMD ["mkdocs", "serve", "-f", "/mkdocs.yml", "-a", "0.0.0.0:8000"]
+###############################################
+# Production Image
+###############################################
+FROM python_base AS production
+COPY --from=builder_base $PYSETUP_PATH $PYSETUP_PATH
+WORKDIR $PYSETUP_PATH
+COPY ./docs $PYSETUP_PATH/docs
+COPY ./docker/mkdocs $PYSETUP_PATH
+COPY ./docker/mkdocs/entrypoint $PYSETUP_PATH
+ENTRYPOINT [ "./entrypoint" ]
