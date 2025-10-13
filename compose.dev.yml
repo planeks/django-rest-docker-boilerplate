@@ -22,7 +22,7 @@ services:
     ports:
       - "8000:8000"
     command: dev
-    entrypoint: /entrypoint dev
+    entrypoint: /entrypoint
   celeryworker:
     <<: *django
     command: celery-dev worker -l INFO
