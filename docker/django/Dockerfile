@@ -11,54 +11,87 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_HOME="/opt/poetry" \
     POETRY_VIRTUALENVS_IN_PROJECT=true \
     POETRY_NO_INTERACTION=1 \
-    PYSETUP_PATH="/code" \
-    VENV_PATH="/code/.venv"
+    PYSETUP_PATH="/opt/project/src" \
+    VENV_PATH="/opt/project/src/.venv"
+
 # prepend poetry and venv to path
 ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+
 # Install dependencies
 RUN apt-get update \
     && apt-get install -y build-essential libpq-dev gettext curl graphviz \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /var/lib/apt/lists/*
 
-# install poetry - respects $POETRY_VERSION & $POETRY_HOME
+# Install Poetry
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
 # Create appuser
 RUN addgroup --gid 1024 appuser \
     && adduser --disabled-password --gecos "" --force-badname --ingroup appuser appuser
+ \
+    # Set WORKDIR to the project directory
+WORKDIR /opt/project/src
 
 # Copy only pyproject.toml and poetry.lock first (for better caching)
 COPY --chown=appuser:appuser ./src/pyproject.toml ./src/poetry.lock /opt/project/src/
 
+
+# Create project directory and set permissions
+RUN mkdir -p /opt/project/src
+RUN chown -R appuser:appuser /opt/project
+
+# Switch to non-root user for Poetry operations
+USER appuser
+
+# Configure Poetry and install dependencies
+RUN poetry config virtualenvs.create true \
+    && poetry config virtualenvs.in-project true
+
 # Accept build argument to determine environment
 ARG ENVIRONMENT=production
 
-# Install dependencies
-WORKDIR /opt/project/src
-RUN if [ "$ENVIRONMENT" = "production" ] ; then \
-        poetry install --no-root --only main; \
+# Install dependencies based on environment
+RUN poetry config virtualenvs.in-project true \
+    && if [ "$ENVIRONMENT" = "production" ] ; then \
+        poetry install --no-root --only main \
+        && poetry run pip list; \
     else \
-        poetry install --no-root; \
+        poetry install --no-root \
+        && poetry run pip list; \
     fi
+
+# Add this verification step
+RUN poetry run python -c "import psycopg2; print('psycopg2 installed successfully')"
+
+# Verify installation
+RUN poetry run pip list
+
+# Copy the rest of the application code
+COPY --chown=appuser:appuser ./src /opt/project/src
+
+# Switch back to root for copying files
+USER root
 
 # Copy entrypoint
 COPY --chown=appuser:appuser ./docker/django/entrypoint /entrypoint
 RUN sed -i 's/\r$//g' /entrypoint
 RUN chmod +x /entrypoint
 
-# We use the directory /opt/project/src for PyCharm compatibility
-COPY --chown=appuser:appuser ./src /opt/project/src
 
-RUN mkdir /data
-RUN chown -R appuser:appuser /data
-RUN chmod 775 /data
-RUN chmod g+s /data
+# Setup data directory
+RUN mkdir -p /data \
+    && chown -R appuser:appuser /data \
+    && chmod 775 /data \
+    && chmod g+s /data
 
-# Switch to non-root user
+# This step is outside of entrypoint to avoid permission errors
+RUN mkdir -p /data/staticfiles \
+    && chown -R appuser:appuser /data/staticfiles \
+    && chmod 775 /data/staticfiles
+
+# Switch back to non-root user
 USER appuser
-
 WORKDIR /opt/project/src
-
 ENTRYPOINT ["/entrypoint"]

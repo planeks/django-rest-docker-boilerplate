@@ -99,30 +99,30 @@ We specify the following volume in the application container:
 > and the "Deploying the project to the server" section for more details,
 > and adapt it for your needs.
 
-You need to edit `Dockerfile`, `entrypoint` and `docker-compose.dev.yml` files if you need to add other directories to the container and define them as volumes.
+You need to edit `Dockerfile`, `entrypoint` and `compose.dev.yml` files if you need to add other directories to the container and define them as volumes.
 
 Use the following command to build the containers:
 
 ```shell
-$ docker compose -f docker-compose.dev.yml build
+$ docker compose -f compose.dev.yml build
 ```
 
 Use the next command to run the project in detached mode:
 
 ```shell
-$ docker compose -f docker-compose.dev.yml up -d
+$ docker compose -f compose.dev.yml up -d
 ```
 
 Use the following command to run `bash` inside the container if you want to run a management command like Django interactive shell.
 
 ```shell
-$ docker compose -f docker-compose.dev.yml exec django bash
+$ docker compose -f compose.dev.yml exec django bash
 ```
 
 Or, you can run the temporary container:
 
 ```shell
-$ docker compose -f docker-compose.dev.yml run --rm django bash
+$ docker compose -f compose.dev.yml run --rm django bash
 ```
 
 ## 🏃‍ Running the project in PyCharm
@@ -181,7 +181,7 @@ access rights.
 ![Celery Beat Run Configuration](docs/readme_images/celerybeat-run-configuration.jpg)
 
 > Configuring runners for the PyCharm is optional but simplify using
-> debugger. Anyway you can just use `docker compose -f docker-compose.dev.yml up -d`
+> debugger. Anyway you can just use `docker compose -f compose.dev.yml up -d`
 > in the terminal.
 
 ## 🖥️ Deploying the project to the server
