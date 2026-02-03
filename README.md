@@ -11,6 +11,16 @@ Download the last version of the boiler plate from the repository: https://githu
 
 You can download the ZIP archive and unpack it to the directory, or clone the repository (but do not forget to clean the Git history in that case).
 
+Use the global find and replace for changing the string `NEWPROJECTNAME` in the files in the `src` directory to the proper project name. The easiest way to do it just use `Replace` feature in the IDE.
+
+There are three files where the changes should be done:
+
+```
+src/config/settings/base.py
+src/config/templates/index.html
+src/config/urls.py
+```
+
 ## 🐳 Install Docker and Docker Compose
 
 For the local computer we recommend using Docker Desktop. 
@@ -133,7 +143,7 @@ of PyCharm.
 Go to `Preferences` -> `Project` -> `Python Interpreter`. Click the gear icon
 and select the `Add...` item.
 
-Select `Docker Compose` and specify your configuration file (`local.yml`) and
+Select `Docker Compose` and specify your configuration file (`compose.dev.yml`) and
 the particular service.
 
 ![Add Python Interpreter](docs/readme_images/add-remote-interpreter.jpg)
@@ -489,7 +499,7 @@ Add the next lines
 
 ## Overview
 
-This guide will help you set up GitHub Actions workflows for a Django/React application with three environments: Development, Staging, and Production.
+This guide will help you set up GitHub Actions workflows for a Django REST API application with three environments: Development, Staging, and Production.
 
 ## Create Workflow Files
 
