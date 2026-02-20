@@ -5,8 +5,6 @@ x-django-common: &django-common
     - postgres
     - redis
   volumes:
-    - ./src:/opt/project/src:cached
-    - /opt/project/src/.venv
     - static:/data/staticfiles/
     - media:/data/media/
   env_file:
@@ -68,6 +66,8 @@ services:
   redis:
     image: redis:6.0
     restart: always
+    volumes:
+      - prod_redis:/data
     logging:
       driver: journald
       options:
