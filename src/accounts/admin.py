@@ -8,7 +8,6 @@ from .models import User
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    # add_form_template = 'accounts/admin/auth/user/add_form.html'
     fieldsets = (
         (
             None,
@@ -74,7 +73,8 @@ class UserAdmin(BaseUserAdmin):
                 self.admin_site.admin_view(self.user_change_password),
                 name="auth_user_password_change",
             ),
-        ] + super().get_urls()
+            *super().get_urls(),
+        ]
 
     def activate(self, request, queryset):
         queryset.update(is_active=True)

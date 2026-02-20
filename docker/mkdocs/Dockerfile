@@ -29,24 +29,46 @@ RUN  apt-get update && \
     curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
 # install poetry - respects $POETRY_VERSION & $POETRY_HOME
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
-# copy project requirement files here to ensure they will be cached.
+# Create directory and copy project files
 WORKDIR $PYSETUP_PATH
 COPY ./src/poetry.lock ./src/pyproject.toml ./
 
-# install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
+# Install dependencies with virtualenv in project
 RUN poetry install --only docs
 
 ###############################################
 # Production Image
 ###############################################
 FROM python_base AS production
+
+# Install curl for Poetry installation
+RUN apt-get update && \
+    apt-get --no-install-recommends -y install \
+    curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
+# Copy the project files and virtual environment
 COPY --from=builder_base $PYSETUP_PATH $PYSETUP_PATH
+COPY --from=builder_base $POETRY_HOME $POETRY_HOME
+
 WORKDIR $PYSETUP_PATH
 COPY ./docs $PYSETUP_PATH/docs
+COPY ./src $PYSETUP_PATH/src
 COPY ./docker/mkdocs $PYSETUP_PATH
 COPY ./docker/mkdocs/entrypoint $PYSETUP_PATH
+
+# Add source directory to PYTHONPATH
+ENV PYTHONPATH="${PYSETUP_PATH}/src:${PYTHONPATH}"
+
+RUN chmod +x ./entrypoint
+
 ENTRYPOINT [ "./entrypoint" ]
