@@ -147,7 +147,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 STATIC_URL = "/static/"
 STATIC_ROOT = config("STATIC_ROOT", default=os.path.join(BASE_DIR, "/data/staticfiles"))
 
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "config", "static"),)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = config('MEDIA_ROOT', default=os.path.join(BASE_DIR, '/data/media'))
