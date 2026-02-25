@@ -5,7 +5,8 @@ from pathlib import Path
 from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
+BASE_DIR = Path(__file__).resolve(strict=True).parents[2]  # /src
+ROOT_DIR = BASE_DIR.parent  # /
 PROJECT_NAME = config("PROJECT_NAME", default="NEWPROJECTNAME")
 
 
@@ -41,27 +42,24 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "drf_spectacular",
     "corsheaders",
-    # 'polymorphic',
-    # 'anymail',
+    # "polymorphic",
+    # "anymail",
     "django_extensions",
     # Add the apps here
     "core",
     "accounts",
 ]
 
-if SENTRY_DSN:
+if SENTRY_DSN and SENTRY_DSN.strip() and SENTRY_DSN.strip().startswith(("http://", "https://")):
     import sentry_sdk
     from sentry_sdk.integrations.celery import CeleryIntegration
     from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.redis import RedisIntegration
 
     def strip_sensitive_data(event, hint):
-        """This function removes the DisallowedHost errors from
-        the Sentry logs for avoiding excedding the quota.
-        """
-        if "log_record" in hint:
-            if hint["log_record"].name == "django.security.DisallowedHost":
-                return None
+        """Remove DisallowedHost errors from Sentry to avoid exceeding quota."""
+        if "log_record" in hint and hint["log_record"].name == "django.security.DisallowedHost":
+            return None
         return event
 
     sentry_sdk.init(
@@ -120,8 +118,6 @@ AUTH_PASSWORD_VALIDATORS = []
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/3.1/topics/i18n/
-
 LANGUAGE_CODE = config("LANGUAGE_CODE", default="en-us")
 
 LANGUAGES = [
@@ -131,29 +127,20 @@ LANGUAGES = [
 TIME_ZONE = config("TIME_ZONE", default="UTC")
 
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
 REDIS_URL = config("REDIS_URL")
 
 WSGI_APPLICATION = "config.wsgi.application"
-# ASGI_APPLICATION = 'config.asgi.application'
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = config("STATIC_ROOT", default=os.path.join(BASE_DIR, "/data/staticfiles"))
+STATIC_ROOT = config("STATIC_ROOT", default="/data/staticfiles")
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = config('MEDIA_ROOT', default=os.path.join(BASE_DIR, '/data/media'))
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+MEDIA_URL = "/media/"
+MEDIA_ROOT = config("MEDIA_ROOT", default="/data/media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -162,8 +149,6 @@ KEY_PREFIX = config("KEY_PREFIX", default=PROJECT_NAME)
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_BEAT_SCHEDULER = "redbeat.RedBeatScheduler"
-# CELERYBEAT_SCHEDULE_FILENAME = config(
-#     'CELERYBEAT_SCHEDULE_FILENAME', default='/data/celerybeat-schedule.db')
 CELERY_BEAT_SCHEDULE = {}
 
 
@@ -183,8 +168,6 @@ EMAIL_PORT = config("EMAIL_PORT", default=25, cast=int)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_SSL = config("EMAIL_USE_SSL", default="0", cast=bool)
-
-# Host for sending e-mail.
 
 
 CACHES = {
@@ -218,10 +201,27 @@ SPECTACULAR_SETTINGS = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Add Simple JWT settings (optional)
 from datetime import timedelta
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {"format": "[%(levelname)s] %(name)s: %(message)s"},
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+    },
 }

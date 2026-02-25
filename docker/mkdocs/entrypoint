@@ -4,13 +4,13 @@
 
 case "$1" in
     serve)
-        exec mkdocs serve -a 0.0.0.0:8000
+        exec poetry run mkdocs serve -a 0.0.0.0:8000
     ;;
     build)
-        exec mkdocs build
+        exec poetry run mkdocs build
     ;;
     bash)
-        exec /bin/bash "${@:2}"
+        exec poetry run /bin/bash "${@:2}"
     ;;
     *)
         exit 1
